@@ -768,6 +768,20 @@ ifdef CONFIG_CC_WERROR
 KBUILD_CFLAGS  += -Werror
 endif
 
+# Optimize for lahaina's little cpu
+KBUILD_CFLAGS += -mcpu=cortex-a55
+KBUILD_AFLAGS += -mcpu=cortex-a55
+
+ifeq ($(CONFIG_LLVM_POLLY), y)
+KBUILD_CFLAGS	+= -mllvm -polly \
+		   -mllvm -polly-run-inliner \
+		   -mllvm -polly-opt-fusion=max \
+		   -mllvm -polly-ast-use-context \
+		   -mllvm -polly-detect-keep-going \
+		   -mllvm -polly-vectorizer=stripmine \
+		   -mllvm -polly-invariant-load-hoisting
+endif
+
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 KBUILD_CFLAGS	+= $(call cc-option,-fno-allow-store-data-races)
@@ -1997,3 +2011,5 @@ FORCE:
 # Declare the contents of the PHONY variable as phony.  We keep that
 # information in a variable so we can use it in if_changed and friends.
 .PHONY: $(PHONY)
+
+CFLAGS += -fPIC
