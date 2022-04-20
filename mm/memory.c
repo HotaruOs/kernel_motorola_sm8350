@@ -2983,8 +2983,8 @@ vm_fault_t do_swap_page(struct vm_fault *vmf)
 				swap_readpage(page, true);
 			}
 		} else {
-			page = swapin_readahead(entry, GFP_HIGHUSER_MOVABLE | __GFP_CMA
-					      | __GFP_OFFLINABLE, vmf);
+			page = swapin_readahead(entry, GFP_HIGHUSER_MOVABLE | __GFP_CMA,
+						vmf);
 			swapcache = page;
 		}
 
