@@ -5,6 +5,8 @@ CONFIG_PRINT_SUSPEND_EPOCH_QGKI=y
 # HuP ===========================
 # = USB UVC =
 CONFIG_USB_CONFIGFS_F_UVC=y
+# = Kcal =
+CONFIG_FB_MSM_MDSS_KCAL_CTRL=y
 # ===============================
 CONFIG_NO_HZ=y
 CONFIG_HIGH_RES_TIMERS=y
