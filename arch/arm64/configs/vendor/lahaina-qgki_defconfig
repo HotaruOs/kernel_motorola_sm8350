@@ -2,6 +2,9 @@ CONFIG_UAPI_HEADER_TEST=y
 CONFIG_LOCALVERSION="-HuP-K2B"
 CONFIG_AUDIT=y
 CONFIG_PRINT_SUSPEND_EPOCH_QGKI=y
+# HuP ===========================
+CONFIG_SCHED_BORE=y
+# ===============================
 #Kcal
 CONFIG_FB_MSM_MDSS_KCAL_CTRL=y
 #MGLRU
