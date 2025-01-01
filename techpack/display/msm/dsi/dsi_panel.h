@@ -418,6 +418,11 @@ struct dsi_panel {
 	u8 fod_dim_alpha;
 	bool fod_hbm_enabled;
 	bool fod_ui;
+
+#ifdef CONFIG_DRM_SDE_EXPO
+	bool dimlayer_exposure;
+#endif
+
 };
 
 bool dsi_display_all_displays_dead(void);
