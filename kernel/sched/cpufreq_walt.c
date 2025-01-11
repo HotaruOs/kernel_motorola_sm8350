@@ -293,7 +293,7 @@ static void waltgov_deferred_update(struct waltgov_policy *wg_policy, u64 time,
 #endif
 }
 
-#define TARGET_LOAD 80
+#define TARGET_LOAD 90
 static inline unsigned long walt_map_util_freq(unsigned long util,
 					struct waltgov_policy *wg_policy,
 					unsigned long cap, int cpu)
@@ -1505,6 +1505,22 @@ static int waltgov_init(struct cpufreq_policy *policy)
 	tunables->target_load_thresh = DEFAULT_TARGET_LOAD_THRESH;
 	tunables->target_load_shift = DEFAULT_TARGET_LOAD_SHIFT;
 
+	switch (policy->cpu) {
+	default:
+	case 0:
+		tunables->up_rate_limit_us = 1000;
+	        tunables->down_rate_limit_us = 1500;
+		break;
+	case 4:
+		tunables->up_rate_limit_us = 8000;
+	        tunables->down_rate_limit_us = 1070;
+		break;
+	case 7:
+		tunables->up_rate_limit_us = 4000;
+	        tunables->down_rate_limit_us = 1030;
+		break;
+	}
+	
 	switch (policy->cpu) {
 	default:
 	case 0:
