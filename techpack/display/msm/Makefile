@@ -167,4 +167,5 @@ obj-$(CONFIG_DISPLAY_BUILD)	+= msm_drm.o
 
 obj-$(CONFIG_DRM_FBDEV_EMULATION) += msm_fbdev.o
 
-CFLAGS += -Wno-unused-variable
+subdir-ccflags-y := -Wno-unused-variable
+subdir-ccflags-y := -Wno-error
