@@ -70,14 +70,14 @@ static struct asmp_param_struct {
     unsigned int cycle_up;
     unsigned int cycle_down;
 } asmp_param = {
-    .delay = 144,
+    .delay = 100,
     .scroff_single_core = true,
     .max_cpus_pr = 1, /* Max cpu Prime cluster ! */ 
     .max_cpus_bc = 3, /* Max cpu Big cluster ! */
     .max_cpus_lc = 4, /* Max cpu Little cluster ! */
     .min_cpus_pr = 0, /* Minimum Prime cluster online */
-    .min_cpus_bc = 1, /* Minimum Big cluster online */
-    .min_cpus_lc = 3, /* Minimum Little cluster online */
+    .min_cpus_bc = 0, /* Minimum Big cluster online */
+    .min_cpus_lc = 4, /* Minimum Little cluster online */
     .cpufreq_up_pr = 80,
     .cpufreq_up_bc = 70,
     .cpufreq_up_lc = 50,
