@@ -71,7 +71,7 @@ struct waltgov_cpu {
 	unsigned int		iowait_boost;
 	u64			last_update;
 
-	struct sched_walt_cpu_load walt_load;
+	struct walt_cpu_load walt_load;
 
 	unsigned long util;
 	unsigned int flags;
@@ -348,7 +348,7 @@ static unsigned int get_next_freq(struct waltgov_policy *sg_policy,
 static unsigned long waltgov_get_util(struct waltgov_cpu *sg_cpu)
 {
 	struct rq *rq = cpu_rq(sg_cpu->cpu);
-	unsigned long max = arch_scale_cpu_capacity(NULL, sg_cpu->cpu);
+	unsigned long max = arch_scale_cpu_capacity(sg_cpu->cpu);
 
 	sg_cpu->max = max;
 	sg_cpu->bw_dl = cpu_bw_dl(rq);

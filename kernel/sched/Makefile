@@ -19,7 +19,7 @@ endif
 obj-y += core.o loadavg.o clock.o cputime.o
 obj-y += idle.o fair.o rt.o deadline.o
 obj-y += wait.o wait_bit.o swait.o completion.o
-ccflags-y += -Wno-unused-variable
+ccflags-y += -Wno-unused-variable -Wno-uninitialized -Wno-implicit-function-declaration
 
 obj-$(CONFIG_SCHED_WALT) += walt/ cpufreq_walt.o
 obj-$(CONFIG_SMP) += cpupri.o cpudeadline.o topology.o stop_task.o pelt.o
