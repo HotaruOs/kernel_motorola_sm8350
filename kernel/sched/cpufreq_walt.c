@@ -15,8 +15,8 @@
 #include <trace/events/power.h>
 #include <linux/sched/sysctl.h>
 
-#include "walt.h"
-#include <trace/events/walt.h>
+#include "walt/walt.h"
+#include <walt/trace.h>
 
 struct waltgov_tunables {
 	struct gov_attr_set	attr_set;
