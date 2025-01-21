@@ -17364,7 +17364,7 @@ wlan_hdd_update_akm_suit_info(struct wiphy *wiphy)
 static void
 wlan_hdd_update_max_connect_akm(struct wiphy *wiphy)
 {
-	wiphy->max_num_akms_connect = WLAN_CM_MAX_CONNECT_AKMS;
+	wiphy->max_num_akm_suites = WLAN_CM_MAX_CONNECT_AKMS;
 }
 #else
 static void
@@ -20519,6 +20519,24 @@ static bool wlan_hdd_is_akm_suite_fils(uint32_t key_mgmt)
 }
 
 #ifdef CFG80211_MULTI_AKM_CONNECT_SUPPORT
+static int
+hdd_get_num_akm_suites(const struct cfg80211_connect_params *req)
+{
+	return req->crypto.n_akm_suites;
+}
+
+static uint32_t*
+hdd_get_akm_suites(const struct cfg80211_connect_params *req)
+{
+	return (uint32_t *)req->crypto.akm_suites;
+}
+
+#ifdef CFG80211_MULTI_AKM_CONNECT_SUPPORT
+#define MAX_AKM_SUITES WLAN_CM_MAX_CONNECT_AKMS
+#else
+#define MAX_AKM_SUITES NL80211_MAX_NR_AKM_SUITES
+#endif
+>>>>>>> 5aa75ffa200d (Merge tag 'LA.UM.9.14.r1-25500-LAHAINA.QSSI15.0' of https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/wlan/qcacld-3.0 into vauxite)
 /**
  * hdd_populate_crypto_akm_type() - populate akm type for crypto
  * @vdev: pointed to vdev obmgr
