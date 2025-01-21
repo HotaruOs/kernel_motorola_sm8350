@@ -141,6 +141,10 @@ static int32_t mclk_cfg_be_idx;
 static int32_t mclk_cfg_src_id;
 static uint32_t mclk_cfg_freq;
 
+static int32_t mclk_cfg_be_idx;
+static int32_t mclk_cfg_src_id;
+static uint32_t mclk_cfg_freq;
+
 #define WEIGHT_0_DB 0x4000
 /* all the FEs which can support channel mixer */
 static struct msm_pcm_channel_mixer channel_mixer[MSM_FRONTEND_DAI_MM_SIZE];
