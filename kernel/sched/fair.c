@@ -234,15 +234,15 @@ unsigned int sysctl_sched_cfs_bandwidth_slice		= 5000UL;
  */
 unsigned int capacity_margin				= 1125;
 
-unsigned int sched_capacity_margin_up[CPU_NR] = {
-			[0 ... CPU_NR-1] = 1075}; /* ~5% margin */
-unsigned int sched_capacity_margin_down[CPU_NR] = {
+unsigned int sched_capacity_margin_up[NR_CPUS] = {
+			[0 ... NR_CPUS-1] = 1075}; /* ~5% margin */
+unsigned int sched_capacity_margin_down[NR_CPUS] = {
 				    1100, 1100, 1100, 1100, 1796, 1796, 1796, 1442
 }; /* ~10% margin for small, ~43% margin for big, ~29% for prime */
-unsigned int sched_capacity_margin_up_boosted[CPU_NR] = {
+unsigned int sched_capacity_margin_up_boosted[NR_CPUS] = {
 	2560, 2560, 2560, 2560, 1078, 1078, 1078, 1024
 }; /* 50% margin for small, 5% for big, 0% for big+ */
-unsigned int sched_capacity_margin_down_boosted[CPU_NR] = {
+unsigned int sched_capacity_margin_down_boosted[NR_CPUS] = {
 	2560, 2560, 2560, 2560, 3658, 3658, 3658, 3658
 }; /* not used for small cores, 72% margin for big, 72% margin for big+ */
 
