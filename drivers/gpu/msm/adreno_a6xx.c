@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+w// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
@@ -2640,9 +2640,6 @@ const struct adreno_gpudev adreno_a6xx_gpudev = {
 	.ccu_invalidate = a6xx_ccu_invalidate,
 #ifdef CONFIG_QCOM_KGSL_CORESIGHT
 	.coresight = {&a6xx_coresight, &a6xx_coresight_cx},
-#endif
-#if IS_ENABLED(CONFIG_COMMON_CLK_QCOM)
-	.clk_set_options = a6xx_clk_set_options,
 #endif
 	.read_alwayson = a6xx_read_alwayson,
 	.power_ops = &adreno_power_operations,
