@@ -126,11 +126,4 @@ else
 	fi
 fi
 
-# Hotaro kernel version 
-
-MONTH=$(date +%m | sed 's/^0//')
-DAY=$(date +%d)
-
-echo "-V${MONTH}.${DAY}"
-
 echo "$res"
