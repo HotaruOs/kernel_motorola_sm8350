@@ -110,6 +110,13 @@ int __weak arch_asym_cpu_priority(int cpu)
  */
 #define fits_capacity(cap, max)	((cap) * 1280 < (max) * 1024)
 
+/*
+ * The margin used when comparing CPU capacities.
+ * is 'cap1' noticeably greater than 'cap2'
+ *
+ * (default: ~5%)
+ */
+#define capacity_greater(cap1, cap2) ((cap1) * 1024 > (cap2) * 1078)
 #endif
 
 #ifdef CONFIG_CFS_BANDWIDTH
@@ -3608,6 +3615,7 @@ static void detach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 #define UPDATE_TG	0x1
 #define SKIP_AGE_LOAD	0x2
 #define DO_ATTACH	0x4
+#define SKIP_CPUFREQ	0x8
 
 /* Update task and its cfs_rq load average */
 static inline void update_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
@@ -4022,6 +4030,7 @@ static inline void update_misfit_status(struct task_struct *p, struct rq *rq)
 #define UPDATE_TG	0x0
 #define SKIP_AGE_LOAD	0x0
 #define DO_ATTACH	0x0
+#define SKIP_CPUFREQ	0x0
 
 static inline void update_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se, int not_used1)
 {
@@ -4215,6 +4224,7 @@ static inline bool cfs_bandwidth_used(void);
 static void
 enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 {
+	int update_flags;
 	bool renorm = !(flags & ENQUEUE_WAKEUP) || (flags & ENQUEUE_MIGRATED);
 	bool curr = cfs_rq->curr == se;
 
@@ -4244,7 +4254,12 @@ enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 	 *     its group cfs_rq
 	 *   - Add its new weight to cfs_rq->load.weight
 	 */
-	update_load_avg(cfs_rq, se, UPDATE_TG | DO_ATTACH);
+	update_flags = UPDATE_TG | DO_ATTACH;
+
+	if (flags & DEQUEUE_IDLE)
+		update_flags |= SKIP_CPUFREQ;
+
+	update_load_avg(cfs_rq, se, update_flags);
 	update_cfs_group(se);
 	enqueue_runnable_load_avg(cfs_rq, se);
 	account_entity_enqueue(cfs_rq, se);
@@ -5649,6 +5664,9 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	int task_sleep = flags & DEQUEUE_SLEEP;
 	int idle_h_nr_running = task_has_idle_policy(p);
 
+	if (task_sleep && rq->nr_running == 1)
+		flags |= DEQUEUE_IDLE;
+
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		dequeue_entity(cfs_rq, se, flags);
@@ -5678,7 +5696,7 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 
-		update_load_avg(cfs_rq, se, UPDATE_TG);
+		update_load_avg(cfs_rq, se, UPDATE_TG | (flags & DEQUEUE_IDLE));
 		update_cfs_group(se);
 
 		cfs_rq->h_nr_running--;
@@ -6169,9 +6187,11 @@ static inline bool test_idle_cores(int cpu, bool def)
 {
 	struct sched_domain_shared *sds;
 
-	sds = rcu_dereference(per_cpu(sd_llc_shared, cpu));
-	if (sds)
-		return READ_ONCE(sds->has_idle_cores);
+	if (static_branch_likely(&sched_smt_present)) {
+		sds = rcu_dereference(per_cpu(sd_llc_shared, cpu));
+		if (sds)
+			return READ_ONCE(sds->has_idle_cores);
+	}
 
 	return def;
 }
@@ -9153,30 +9173,6 @@ group_is_overloaded(struct lb_env *env, struct sg_lb_stats *sgs)
 }
 
 /*
- * group_smaller_min_cpu_capacity: Returns true if sched_group sg has smaller
- * per-CPU capacity than sched_group ref.
- */
-static inline bool
-group_smaller_min_cpu_capacity(struct sched_group *sg, struct sched_group *ref)
-{
-	return sg->sgc->min_capacity *
-				sched_capacity_margin_up[group_first_cpu(sg)] <
-						ref->sgc->min_capacity * 1024;
-}
-
-/*
- * group_smaller_max_cpu_capacity: Returns true if sched_group sg has smaller
- * per-CPU capacity_orig than sched_group ref.
- */
-static inline bool
-group_smaller_max_cpu_capacity(struct sched_group *sg, struct sched_group *ref)
-{
-	return sg->sgc->max_capacity *
-				sched_capacity_margin_up[group_first_cpu(sg)] <
-						ref->sgc->max_capacity * 1024;
-}
-
-/*
  * group_similar_cpu_capacity: Returns true if the minimum capacity of the
  * compared groups differ by less than 12.5%.
  */
@@ -9336,7 +9332,7 @@ static bool update_sd_pick_busiest(struct lb_env *env,
 	 * internally or be covered by avg_load imbalance (eventually).
 	 */
 	if (sgs->group_type == group_misfit_task &&
-	    (!group_smaller_max_cpu_capacity(sg, sds->local) ||
+	    (!capacity_greater(capacity_of(env->dst_cpu), sg->sgc->max_capacity) ||
 	     !group_has_capacity(env, &sds->local_stat)))
 		return false;
 
@@ -9373,7 +9369,7 @@ static bool update_sd_pick_busiest(struct lb_env *env,
 	 * power/energy consequences are not considered.
 	 */
 	if (sgs->sum_nr_running <= sgs->group_weight &&
-	    group_smaller_min_cpu_capacity(sds->local, sg))
+	    capacity_greater(sg->sgc->min_capacity, capacity_of(env->dst_cpu)))
 		return false;
 
 	/*
@@ -10108,7 +10104,7 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 		 * average load.
 		 */
 		if (env->sd->flags & SD_ASYM_CPUCAPACITY &&
-		    capacity_of(env->dst_cpu) < capacity &&
+		    !capacity_greater((capacity_of(env->dst_cpu)), capacity) &&
 		    (rq->nr_running == 1 ||
 				(rq->nr_running == 2 && task_util(rq->curr) <
 				sched_small_task_threshold)))

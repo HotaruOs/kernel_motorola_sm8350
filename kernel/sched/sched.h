@@ -1490,7 +1490,7 @@ extern void sched_ttwu_pending(void);
  */
 #define for_each_domain(cpu, __sd) \
 	for (__sd = rcu_dereference_check_sched_domain(cpu_rq(cpu)->sd); \
-			__sd; __sd = __sd->parent)
+			__sd; __sd = rcu_dereference(__sd->parent))
 
 /**
  * highest_flag_domain - Return highest sched_domain containing flag.
@@ -1843,6 +1843,7 @@ extern const u32		sched_prio_to_wmult[40];
 #define DEQUEUE_SAVE		0x02 /* Matches ENQUEUE_RESTORE */
 #define DEQUEUE_MOVE		0x04 /* Matches ENQUEUE_MOVE */
 #define DEQUEUE_NOCLOCK		0x08 /* Matches ENQUEUE_NOCLOCK */
+#define DEQUEUE_IDLE		0x80 /* The last dequeue before IDLE */
 
 #define ENQUEUE_WAKEUP		0x01
 #define ENQUEUE_RESTORE		0x02
