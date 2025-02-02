@@ -1540,8 +1540,6 @@ int drm_atomic_debugfs_init(struct drm_minor *minor)
 			minor->debugfs_root, minor);
 }
 #endif
-<<<<<<< HEAD
-=======
 
 /*
  * The big monster ioctl
@@ -2097,4 +2095,3 @@ out:
 
 	return ret;
 }
->>>>>>> 0ad778d2b9f7 (drm: Boost DDR bus upon running an atomic ioctl)
