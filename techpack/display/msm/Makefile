@@ -100,6 +100,8 @@ msm_drm-$(CONFIG_DRM_SDE_RSC) += sde_rsc.o \
 	sde_rsc_hw.o \
 	sde_rsc_hw_v3.o
 
+msm_drm-$(CONFIG_DRM_SDE_EXPO) += sde/sde_expo_dim_layer.o
+
 msm_drm-$(CONFIG_DRM_MSM_DSI) += dsi/dsi_phy.o \
 	dsi/dsi_pwr.o \
 	dsi/dsi_phy.o \
@@ -164,3 +166,6 @@ msm_drm-$(CONFIG_MSM_SDE_ROTATOR) += ../rotator/sde_rotator_dev.o \
 obj-$(CONFIG_DISPLAY_BUILD)	+= msm_drm.o
 
 obj-$(CONFIG_DRM_FBDEV_EMULATION) += msm_fbdev.o
+
+subdir-ccflags-y := -Wno-unused-variable
+subdir-ccflags-y := -Wno-error

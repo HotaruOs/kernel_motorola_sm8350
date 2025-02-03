@@ -998,7 +998,7 @@ static int qcom_glink_rx_defer(struct qcom_glink *glink, size_t extra)
 	list_add_tail(&dcmd->node, &glink->rx_queue);
 	spin_unlock(&glink->rx_lock);
 
-	schedule_work(&glink->rx_work);
+	queue_work(system_highpri_wq, &glink->rx_work);
 	qcom_glink_rx_advance(glink, sizeof(dcmd->msg) + extra);
 
 	return 0;
@@ -1297,6 +1297,7 @@ static irqreturn_t qcom_glink_native_intr(int irq, void *data)
 	if (should_wake) {
 		pr_info("%s: %d triggered %s\n", __func__, irq, glink->irqname);
 		glink_resume_pkt = true;
+		should_wake = false;
 		pm_system_wakeup();
 	}
 	/* To wakeup any blocking writers */

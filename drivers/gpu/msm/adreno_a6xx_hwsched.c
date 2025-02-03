@@ -418,9 +418,9 @@ static int a6xx_hwsched_gpu_boot(struct adreno_device *adreno_dev)
 	a6xx_start(adreno_dev);
 
 	/* Re-initialize the coresight registers if applicable */
-	adreno_coresight_start(adreno_dev);
+//	adreno_coresight_start(adreno_dev);
 
-	adreno_perfcounter_start(adreno_dev);
+//	adreno_perfcounter_start(adreno_dev);
 
 	/* Clear FSR here in case it is set from a previous pagefault */
 	kgsl_mmu_clear_fsr(&device->mmu);
@@ -481,7 +481,7 @@ static void a6xx_hwsched_touch_wakeup(struct adreno_device *adreno_dev)
 		return;
 
 	if (test_bit(GMU_PRIV_GPU_STARTED, &gmu->flags))
-		goto done;
+		return;
 
 	trace_kgsl_pwr_request_state(device, KGSL_STATE_ACTIVE);
 
@@ -501,16 +501,6 @@ static void a6xx_hwsched_touch_wakeup(struct adreno_device *adreno_dev)
 	device->state = KGSL_STATE_ACTIVE;
 
 	trace_kgsl_pwr_set_state(device, KGSL_STATE_ACTIVE);
-
-done:
-	/*
-	 * When waking up from a touch event we want to stay active long enough
-	 * for the user to send a draw command.  The default idle timer timeout
-	 * is shorter than we want so go ahead and push the idle timer out
-	 * further for this special case
-	 */
-	mod_timer(&device->idle_timer, jiffies +
-		msecs_to_jiffies(adreno_wake_timeout));
 }
 
 static int a6xx_hwsched_boot(struct adreno_device *adreno_dev)
@@ -623,10 +613,10 @@ static int a6xx_hwsched_power_off(struct adreno_device *adreno_dev)
 	kgsl_pwrscale_update_stats(device);
 
 	/* Save active coresight registers if applicable */
-	adreno_coresight_stop(adreno_dev);
+//	adreno_coresight_stop(adreno_dev);
 
 	/* Save physical performance counter values before GPU power down*/
-	adreno_perfcounter_save(adreno_dev);
+//	adreno_perfcounter_save(adreno_dev);
 
 	adreno_irqctrl(adreno_dev, 0);
 
