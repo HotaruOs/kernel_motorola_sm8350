@@ -6,6 +6,7 @@
 #include <linux/component.h>
 #include <linux/delay.h>
 #include <linux/firmware.h>
+#include <linux/input.h>
 #include <linux/interconnect.h>
 #include <linux/io.h>
 #include <linux/of.h>
@@ -33,7 +34,7 @@
 /* Include the master list of GPU cores that are supported */
 #include "adreno-gpulist.h"
 
-static void adreno_pwr_on_work(struct work_struct *work);
+static void adreno_input_work(struct work_struct *work);
 static int adreno_soft_reset(struct kgsl_device *device);
 static unsigned int counter_delta(struct kgsl_device *device,
 	unsigned int reg, unsigned int *counter);
@@ -60,6 +61,9 @@ static unsigned int adreno_ft_regs_default[] = {
 
 /* Nice level for the higher priority GPU start thread */
 int adreno_wake_nice = -7;
+
+/* Number of milliseconds to stay active active after a wake on touch */
+unsigned int adreno_wake_timeout = 100;
 
 static u32 get_ucode_version(const u32 *data)
 {
@@ -345,17 +349,38 @@ static void adreno_touch_wakeup(struct adreno_device *adreno_dev)
 	 * already in a workqueue which should be sufficient
 	 */
 	kgsl_pwrctrl_change_state(device, KGSL_STATE_ACTIVE);
+
+	/*
+	 * When waking up from a touch event we want to stay active long enough
+	 * for the user to send a draw command.  The default idle timer timeout
+	 * is shorter than we want so go ahead and push the idle timer out
+	 * further for this special case
+	 */
+	mod_timer(&device->idle_timer,
+		jiffies + msecs_to_jiffies(adreno_wake_timeout));
+
 }
 
-static void adreno_pwr_on_work(struct work_struct *work)
+/*
+ * A workqueue callback responsible for actually turning on the GPU after a
+ * touch event. kgsl_pwrctrl_change_state(ACTIVE) is used without any
+ * active_count protection to avoid the need to maintain state.  Either
+ * somebody will start using the GPU or the idle timer will fire and put the
+ * GPU back into slumber.
+ */
+static void adreno_input_work(struct work_struct *work)
 {
-	struct adreno_device *adreno_dev =
-		container_of(work, typeof(*adreno_dev), pwr_on_work);
+	struct adreno_device *adreno_dev = container_of(work,
+			struct adreno_device, input_work);
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	const struct adreno_power_ops *ops = ADRENO_POWER_OPS(adreno_dev);
 
 	mutex_lock(&device->mutex);
+
+	device->flags |= KGSL_FLAG_WAKE_ON_TOUCH;
+
 	ops->touch_wakeup(adreno_dev);
+
 	mutex_unlock(&device->mutex);
 }
 
@@ -1043,6 +1068,10 @@ static int adreno_of_get_power(struct adreno_device *adreno_dev,
 	/* Set default bus control to true on all targets */
 	device->pwrctrl.bus_control = true;
 
+	device->pwrctrl.input_disable =
+		of_property_read_bool(pdev->dev.of_node,
+			"qcom,disable-wake-on-touch");
+
 	return 0;
 }
 
@@ -1348,7 +1377,7 @@ static void adreno_setup_device(struct adreno_device *adreno_dev)
 	/* Enable command timeouts by default */
 	adreno_dev->long_ib_detect = true;
 
-	INIT_WORK(&adreno_dev->pwr_on_work, adreno_pwr_on_work);
+	INIT_WORK(&adreno_dev->input_work, adreno_input_work);
 
 	INIT_LIST_HEAD(&adreno_dev->active_list);
 	spin_lock_init(&adreno_dev->active_list_lock);
@@ -1509,6 +1538,21 @@ int adreno_device_probe(struct platform_device *pdev,
 	/* Initialize coresight for the target */
 //	adreno_coresight_init(adreno_dev);
 
+#ifdef CONFIG_INPUT
+	if (!device->pwrctrl.input_disable) {
+		adreno_input_handler.private = device;
+		/*
+		 * It isn't fatal if we cannot register the input handler.  Sad,
+		 * perhaps, but not fatal
+		 */
+		if (input_register_handler(&adreno_input_handler)) {
+			adreno_input_handler.private = NULL;
+			dev_err(device->dev,
+				     "Unable to register the input handler\n");
+		}
+	}
+#endif
+
 	place_marker("M - DRIVER GPU Ready");
 
 	return 0;
@@ -1577,6 +1621,10 @@ static void adreno_unbind(struct device *dev)
 	/* The memory is fading */
 	_adreno_free_memories(adreno_dev);
 
+#ifdef CONFIG_INPUT
+	if (adreno_input_handler.private)
+		input_unregister_handler(&adreno_input_handler);
+#endif
 	adreno_sysfs_close(adreno_dev);
 
 //	adreno_coresight_remove(adreno_dev);
