@@ -53,7 +53,19 @@ $(warning Detected assembler with broken .inst; disassembly will be unreliable)
   endif
 endif
 
-KBUILD_CFLAGS	+= -mgeneral-regs-only $(lseinstr) $(brokengasinst)	\
+ifdef CONFIG_CC_IS_CLANG
+KBUILD_CFLAGS	+= -mno-implicit-float
+ifeq ($(CONFIG_ARCH_LAHAINA), y)
+KBUILD_CFLAGS  += -mcpu=cortex-a55
+endif
+else
+KBUILD_CFLAGS	+= -mgeneral-regs-only
+ifeq ($(CONFIG_ARCH_LAHAINA), y)
+KBUILD_CFLAGS  += -mcpu=cortex-a76.cortex-a55
+endif
+endif
+
+KBUILD_CFLAGS	+= $(lseinstr) $(brokengasinst)	\
 		   $(compat_vdso) $(cc_has_k_constraint)
 KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
 KBUILD_CFLAGS	+= $(call cc-disable-warning, psabi)
@@ -75,6 +87,10 @@ endif
 # Ensure that if the compiler supports branch protection we default it
 # off.
 KBUILD_CFLAGS += $(call cc-option,-mbranch-protection=none)
+
+ifeq ($(CONFIG_SHADOW_CALL_STACK), y)
+KBUILD_CFLAGS	+= -ffixed-x18
+endif
 
 ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
 KBUILD_CPPFLAGS	+= -mbig-endian
@@ -131,12 +147,17 @@ core-y		+= arch/arm64/
 libs-y		:= arch/arm64/lib/ $(libs-y)
 core-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
 
+ifeq ($(CONFIG_BUILD_ARM64_KERNEL_COMPRESSION_GZIP),y)
+KBUILD_TARGET   := Image.gz
+else
+KBUILD_TARGET   := Image
+endif
+
 # Default target when executing plain make
 boot		:= arch/arm64/boot
-KBUILD_IMAGE	:= $(boot)/Image.gz
+KBUILD_IMAGE	:= $(boot)/$(KBUILD_TARGET)
 
-all:	Image.gz
-
+all:	$(KBUILD_TARGET)
 
 Image: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
@@ -166,10 +187,12 @@ ifeq ($(KBUILD_EXTMOD),)
 # this hack.
 prepare: vdso_prepare
 vdso_prepare: prepare0
-	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso include/generated/vdso-offsets.h
-	$(if $(CONFIG_COMPAT_VDSO),$(Q)$(MAKE) \
-		$(build)=arch/arm64/kernel/vdso32  \
-		include/generated/vdso32-offsets.h)
+	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso \
+	include/generated/vdso-offsets.h arch/arm64/kernel/vdso/vdso.so
+ifdef CONFIG_COMPAT_VDSO
+	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso32 \
+	include/generated/vdso32-offsets.h arch/arm64/kernel/vdso32/vdso.so
+endif
 endif
 
 define archhelp

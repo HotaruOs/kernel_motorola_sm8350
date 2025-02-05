@@ -90,17 +90,11 @@ static inline void kunmap(struct page *page)
 
 static inline void *kmap_atomic(struct page *page)
 {
-	preempt_disable();
-	pagefault_disable();
 	return page_address(page);
 }
 #define kmap_atomic_prot(page, prot)	kmap_atomic(page)
 
-static inline void __kunmap_atomic(void *addr)
-{
-	pagefault_enable();
-	preempt_enable();
-}
+static inline void __kunmap_atomic(void *addr) {}
 
 #define kmap_atomic_pfn(pfn)	kmap_atomic(pfn_to_page(pfn))
 
@@ -118,7 +112,6 @@ static inline int kmap_atomic_idx_push(void)
 	int idx = __this_cpu_inc_return(__kmap_atomic_idx) - 1;
 
 #ifdef CONFIG_DEBUG_HIGHMEM
-	WARN_ON_ONCE(in_irq() && !irqs_disabled());
 	BUG_ON(idx >= KM_TYPE_NR);
 #endif
 	return idx;
@@ -205,7 +198,9 @@ static inline struct page *
 alloc_zeroed_user_highpage_movable(struct vm_area_struct *vma,
 					unsigned long vaddr)
 {
-	return __alloc_zeroed_user_highpage(__GFP_MOVABLE, vma, vaddr);
+	return __alloc_zeroed_user_highpage(
+			__GFP_MOVABLE|__GFP_CMA|__GFP_OFFLINABLE, vma,
+			vaddr);
 }
 
 static inline void clear_highpage(struct page *page)

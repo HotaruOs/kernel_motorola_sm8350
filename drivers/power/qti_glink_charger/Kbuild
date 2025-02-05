@@ -1,0 +1,18 @@
+# add -Wall to try to catch everything we can.
+EXTRA_CFLAGS += -Wall
+EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include
+EXTRA_CFLAGS += -Idrivers/power/mmi_charger
+
+ifneq ($(filter m y,$(CONFIG_WIRELESS_CPS4035B)),)
+	EXTRA_CFLAGS += -DWIRELESS_CPS4035B
+endif
+
+ifneq ($(filter m y,$(CONFIG_WIRELESS_CPS4019)),)
+	EXTRA_CFLAGS += -DWIRELESS_CPS4019
+endif
+
+ifneq ($(filter m y,$(CONFIG_SKIP_QTI_CHARGER_CONFIRMAION)),)
+	EXTRA_CFLAGS += -DSKIP_QTI_CHARGER_CONFIRMAION
+endif
+
+obj-$(CONFIG_QTI_GLINK_CHARGER) += qti_glink_charger.o

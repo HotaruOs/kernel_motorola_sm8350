@@ -19,6 +19,11 @@
 
 #include "timekeeping.h"
 
+#ifdef CONFIG_QTI_RPM_STATS_LOG
+extern ssize_t show_msm_rpmh_master_stats(void);
+#endif
+extern int qrtr_first_msg;
+
 /**
  * struct clock_read_data - data required to read from sched_clock()
  *
@@ -70,6 +75,12 @@ struct clock_data {
 
 static struct hrtimer sched_clock_timer;
 static int irqtime = -1;
+
+#ifdef CONFIG_PRINT_SUSPEND_EPOCH_QGKI
+static u64 suspend_ns;
+static u64 suspend_cycles;
+static u64 resume_cycles;
+#endif
 
 core_param(irqtime, irqtime, int, 0400);
 
@@ -280,6 +291,13 @@ int sched_clock_suspend(void)
 	struct clock_read_data *rd = &cd.read_data[0];
 
 	update_sched_clock();
+
+#ifdef CONFIG_PRINT_SUSPEND_EPOCH_QGKI
+	suspend_ns = rd->epoch_ns;
+	suspend_cycles = rd->epoch_cyc;
+	pr_info("suspend ns:%17llu      suspend cycles:%17llu\n",
+				rd->epoch_ns, rd->epoch_cyc);
+#endif
 	hrtimer_cancel(&sched_clock_timer);
 	rd->read_sched_clock = suspended_sched_clock_read;
 
@@ -292,6 +310,15 @@ void sched_clock_resume(void)
 
 	rd->epoch_cyc = cd.actual_read_sched_clock();
 	hrtimer_start(&sched_clock_timer, cd.wrap_kt, HRTIMER_MODE_REL_HARD);
+#ifdef CONFIG_PRINT_SUSPEND_EPOCH_QGKI
+	resume_cycles = rd->epoch_cyc;
+	pr_info("resume cycles:%17llu\n", rd->epoch_cyc);
+#endif
+#ifdef CONFIG_QTI_RPM_STATS_LOG
+	show_msm_rpmh_master_stats();
+#endif
+	qrtr_first_msg = 1;
+
 	rd->read_sched_clock = cd.actual_read_sched_clock;
 }
 
