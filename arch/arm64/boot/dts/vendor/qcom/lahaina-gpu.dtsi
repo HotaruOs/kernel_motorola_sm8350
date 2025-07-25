@@ -46,10 +46,10 @@
 				"apb_pclk";
 
 		qcom,chipid = <0x06060000>;
+		
+		qcom,idle-timeout = <64>; //msecs
 
 		qcom,initial-pwrlevel = <5>;
-
-		qcom,no-nap;
 
 		qcom,highest-bank-bit = <16>;
 
