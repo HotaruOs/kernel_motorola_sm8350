@@ -17,7 +17,7 @@ export KBUILD_BUILD_USER=HotaruOs
 export PATH="$TC_DIR/bin:$PATH"
 if ! [ -d "$TC_DIR" ]; then
 	echo "AOSP clang not found! Cloning to $TC_DIR..."
-	if ! git clone --depth=1 -b 18 https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone "$TC_DIR"; then
+	if ! git clone https://gitlab.com/kei-space/clang/r547379 "$TC_DIR"; then
 		echo "Cloning failed! Aborting..."
 		exit 1
 	fi
