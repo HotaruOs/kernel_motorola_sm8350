@@ -206,10 +206,10 @@ static inline unsigned int walt_nr_rtg_high_prio(int cpu)
 
 extern int core_ctl_init(void);
 
-#if defined(CONFIG_SCHED_WALT_ORIG) && defined(CONFIG_CPU_FREQ)
+#ifdef CONFIG_CPU_FREQ
 extern int cpu_boost_init(void);
 #else
-static inline void cpu_boost_init(void) { }
+static inline int cpu_boost_init(void) { }
 #endif
 
 #else /* CONFIG_SCHED_WALT */
