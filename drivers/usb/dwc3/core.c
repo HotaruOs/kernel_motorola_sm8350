@@ -1757,7 +1757,7 @@ static int dwc3_probe(struct platform_device *pdev)
 		dwc->kt_workthread = NULL;
 		goto err0;
 	} else {
-		struct sched_param param = { .sched_priority = MAX_USER_RT_PRIO / 2 };
+		struct sched_param param = { .sched_priority = MAX_RT_PRIO / 2 };
 
 		if (sched_setscheduler(dwc->kt_workthread, SCHED_FIFO, &param) != 0) {
 			dev_warn(dev,

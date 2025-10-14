@@ -696,7 +696,6 @@ void show_rcu_gp_kthreads(void)
 	unsigned long jw;
 	struct rcu_data *rdp;
 	struct rcu_node *rnp;
-	struct task_struct *t = READ_ONCE(rcu_state.gp_kthread);
 
 	j = jiffies;
 	ja = j - data_race(rcu_state.gp_activity);
@@ -704,7 +703,8 @@ void show_rcu_gp_kthreads(void)
 	jw = j - data_race(rcu_state.gp_wake_time);
 	pr_info("%s: wait state: %s(%d) ->state: %#lx delta ->gp_activity %lu ->gp_req_activity %lu ->gp_wake_time %lu ->gp_wake_seq %ld ->gp_seq %ld ->gp_seq_needed %ld ->gp_flags %#x\n",
 		rcu_state.name, gp_state_getname(rcu_state.gp_state),
-		rcu_state.gp_state, t ? t->state : 0x1ffffL,
+		rcu_state.gp_state,
+		rcu_state.gp_kthread ? rcu_state.gp_kthread->__state : 0x1ffff,
 		ja, jr, jw, (long)data_race(rcu_state.gp_wake_seq),
 		(long)data_race(rcu_state.gp_seq),
 		(long)data_race(rcu_get_root()->gp_seq_needed),
